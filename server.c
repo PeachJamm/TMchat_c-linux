@@ -104,17 +104,17 @@ int internet(client_new c_new[])
     const int on=1;
     if(setsockopt(server_sockid,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on))<0)//设置端口可重复利用
     {
-        printf("setsockopt\n");
+        printf("setsockopt failed\n");
         return 0;
     }
     if(bind(server_sockid,(struct sockaddr *)&sockaddr,sizeof(sockaddr))<0)
     {
-        printf("bind\n");
+        printf("bind failed\n");
         return 0;
     }
     if(listen(server_sockid,SOMAXCONN)<0)
     {
-        printf("listen\n");
+        printf("listen failed\n");
         return 0;
     }
     struct sockaddr_in other_sock_addr;
