@@ -40,7 +40,7 @@ void do_write(int sockid,int *flag)
 	int w_size=read(0,send,sizeof(send));//用户输入存到send
 
 
-	if(send[SIZE_MODE]=='Q')
+	if(send[0]=='Q')
 	{
 		printf("您已下线\n");
 		write(sockid,send,SIZE);//把q发给对方，通知对方自己下线了
@@ -50,7 +50,7 @@ void do_write(int sockid,int *flag)
 
     if(w_size>0)
 	{
-        if(send[SIZE_MODE]=='F'){
+        if(send[0]=='F'){
 
             char filename[SIZE_FILENAME]={0};
             strcpy(filename,send+SIZE_MODE,SIZE_FILENAME);
@@ -62,7 +62,7 @@ void do_write(int sockid,int *flag)
             }
             else
             {
-                fwrite(send,sizeof(char),924,fp);
+                fwrite(send,sizeof(char),SIZE_FIMECONTENT,fp);
                 fclose(fp);
                 write(sockid,send,SIZE);
                 printf("%s 发送成功!\n", file_name);
@@ -99,7 +99,7 @@ int internet()
 	fcntl(sockid,F_SETFL,flags|O_NONBLOCK);
 	flags=fcntl(0,F_GETFL,0);
 	fcntl(0,F_SETFL,flags|O_NONBLOCK);
-    
+
     char send[SIZE]={0};//发送缓存区
 	while(flag)
 	{
