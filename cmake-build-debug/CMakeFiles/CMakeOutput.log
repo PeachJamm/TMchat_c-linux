@@ -1,0 +1,14 @@
+The system is: Windows - 10.0.22621 - AMD64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: E:/CLion 2022.3.1/bin/mingw/bin/gcc.exe 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.exe"
+
+The C compiler identification is GNU, found in "//wsl$/Ubuntu-22.04/home/tt/cproj/TMchat/cmake-build-debug/CMakeFiles/3.24.2/CompilerIdC/a.exe"
+

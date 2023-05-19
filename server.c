@@ -13,6 +13,7 @@
 #define clientA 0
 #define clientB 1
 #define max_client 2  //最大连接客户端数量
+#define SIZE 1024
 
 typedef struct clientNew
 {
@@ -43,12 +44,12 @@ void setsocket_noblock(client_new c_new[])
 
 void  read_clientA(client_new c_new[],int *flag)
 {
-    char receive[100]={0};
+    char receive[SIZE]={0};
     if(read(c_new[clientA].sockid,receive,sizeof(receive))>0)//读取A客户端信息，如果没读到数据就返回0
     {
         time_t timep;//获取A客户端发来信息的时间
         time(&timep);
-        if(strcmp(receive,"quit\n")==0)//如果A客户端发来quit，先把quit发给B客户端，在结束聊天
+        if(strcmp(receive,"Quit")==0)//如果A客户端发来Q，先把Q发给B客户端，在结束聊天
         {
             printf("ip=%s %s 用户发起退出\n",c_new[clientA].addr,ctime(&timep));
             write(c_new[clientB].sockid,receive,strlen(receive));
@@ -64,12 +65,12 @@ void  read_clientA(client_new c_new[],int *flag)
 
 void  read_clientB(client_new c_new[],int *flag)
 {
-    char receive[100]={0};
+    char receive[SIZE]={0};
     if(read(c_new[clientB].sockid,receive,sizeof(receive))>0)//读取B客户端信息，如果没读到数据就返回0
     {
         time_t timep;
         time(&timep);
-        if(strcmp(receive,"quit\n")==0)
+        if(strcmp(receive,"Quit\n")==0)
         {
             printf("ip=%s %s 用户发起退出\n",c_new[clientA].addr,ctime(&timep));
             write(c_new[clientA].sockid,receive,strlen(receive));
