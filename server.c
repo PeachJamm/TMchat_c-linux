@@ -20,80 +20,108 @@ typedef struct clientNew
     char     *addr;
     int      sockid;
     uint16_t port;
-}client_new;//存放所连客户端的地址和socket等信息
+} client_new; //存放所连客户端的地址和socket等信息
 
 void client_new_init(client_new c_new[])
 {
-    int i=0;
-    for(;i<max_client;i++)
+    int i = 0;
+    for (; i < max_client; i++)
     {
-        c_new[i].addr=NULL;
-        c_new[i].sockid=0;
-        c_new[i].port=0;
+        c_new[i].addr = NULL;
+        c_new[i].sockid = 0;
+        c_new[i].port = 0;
     }
 }
 
 void setsocket_noblock(client_new c_new[])
 {
     //设置所连的两个客户端socket非阻塞
-    int flags=fcntl(c_new[clientA].sockid,F_GETFL,0);
-    fcntl(c_new[clientA].sockid,F_SETFL,flags|O_NONBLOCK);
-    flags=fcntl(c_new[clientB].sockid,F_GETFL,0);
-    fcntl(c_new[clientB].sockid,F_SETFL,flags|O_NONBLOCK);
+    int flags = fcntl(c_new[clientA].sockid, F_GETFL, 0);
+    fcntl(c_new[clientA].sockid, F_SETFL, flags | O_NONBLOCK);
+    flags = fcntl(c_new[clientB].sockid, F_GETFL, 0);
+    fcntl(c_new[clientB].sockid, F_SETFL, flags | O_NONBLOCK);
 }
 
-void  read_clientA(client_new c_new[],int *flag)
+void read_clientA(client_new c_new[], int *flag)
 {
-    char receive[SIZE]={0};
-    if(read(c_new[clientA].sockid,receive,sizeof(receive))>0)//读取A客户端信息，如果没读到数据就返回0
-    {
-        time_t timep;//获取A客户端发来信息的时间
-        time(&timep);
-        if(strcmp(receive,"Quit")==0)//如果A客户端发来Q，先把Q发给B客户端，在结束聊天
-        {
-            printf("ip=%s %s 用户发起退出\n",c_new[clientA].addr,ctime(&timep));
-            write(c_new[clientB].sockid,receive,strlen(receive));
-            usleep(1000);
-            *flag=0;
-            return ;
-        }
-        printf("ip=%s %s: ",c_new[clientA].addr,ctime(&timep));
-        printf("%s\n",receive);
-        write(c_new[clientB].sockid,receive,strlen(receive));//将A客户端发来的信息转发给B客户端
-    }
-}
-
-void  read_clientB(client_new c_new[],int *flag)
-{
-    char receive[SIZE]={0};
-    if(read(c_new[clientB].sockid,receive,sizeof(receive))>0)//读取B客户端信息，如果没读到数据就返回0
+    char receive[SIZE] = {0};
+    int n = read(c_new[clientA].sockid, receive, sizeof(receive));
+    if (n > 0)
     {
         time_t timep;
         time(&timep);
-        if(strcmp(receive,"Quit\n")==0)
+        if (strcmp(receive, "Quit") == 0)
         {
-            printf("ip=%s %s 用户发起退出\n",c_new[clientA].addr,ctime(&timep));
-            write(c_new[clientA].sockid,receive,strlen(receive));
+            printf("ip=%s %s 用户发起退出\n", c_new[clientA].addr, ctime(&timep));
+            write(c_new[clientB].sockid, receive, strlen(receive));
             usleep(1000);
-            *flag=0;
-            return ;
+            *flag = 0;
+            return;
         }
-        printf("ip=%s: %s:",c_new[clientB].addr,ctime(&timep));
-        printf("%s\n",receive);
-        write(c_new[clientA].sockid,receive,strlen(receive));//将B客户端发来的信息转发给A客户端
+        printf("ip=%s %s: ", c_new[clientA].addr, ctime(&timep));
+        printf("%s\n", receive);
+        write(c_new[clientB].sockid, receive, n); // 将A客户端发来的信息转发给B客户端
+        fflush(stdout); // 刷新标准输出缓冲区
     }
 }
 
-void  communication(client_new c_new[],int server_sockid)
+void read_clientB(client_new c_new[], int *flag)
 {
-    int flag=1;
-    while(flag)
+    char receive[SIZE] = {0};
+    int n = read(c_new[clientB].sockid, receive, sizeof(receive));
+    if (n > 0)
     {
-        read_clientA(c_new,&flag);
-        read_clientB(c_new,&flag);
+        time_t timep;
+        time(&timep);
+        if (strcmp(receive, "Quit\n") == 0)
+        {
+            printf("ip=%s %s 用户发起退出\n", c_new[clientA].addr, ctime(&timep));
+            write(c_new[clientA].sockid, receive, strlen(receive));
+            usleep(1000);
+            *flag = 0;
+            return;
+        }
+        printf("ip=%s: %s:", c_new[clientB].addr, ctime(&timep));
+        printf("%s\n", receive);
+        write(c_new[clientA].sockid, receive, n); // 将B客户端发来的信息转发给A客户端
+        fflush(stdout); // 刷新标准输出缓冲区
     }
-    close(server_sockid);
 }
+
+void communication(client_new c_new[])
+{
+    int flag = 1;
+    while (flag)
+    {
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(c_new[clientA].sockid, &fds);
+        FD_SET(c_new[clientB].sockid, &fds);
+
+        int max_fd = (c_new[clientA].sockid > c_new[clientB].sockid) ? c_new[clientA].sockid : c_new[clientB].sockid;
+
+        if (select(max_fd + 1, &fds, NULL, NULL, NULL) < 0)
+        {
+            perror("select");
+            break;
+        }
+
+        if (FD_ISSET(c_new[clientA].sockid, &fds))
+        {
+            read_clientA(c_new, &flag);
+        }
+
+        if (FD_ISSET(c_new[clientB].sockid, &fds))
+        {
+            read_clientB(c_new, &flag);
+        }
+    }
+
+    close(c_new[clientA].sockid);
+    close(c_new[clientB].sockid);
+}
+
+
 
 int internet(client_new c_new[])
 {
@@ -136,10 +164,10 @@ int internet(client_new c_new[])
 
 int main()
 {
-    client_new c_new[max_client];		//定义结构体数组
-    client_new_init(c_new);				//初始化结构体数组
-    int server_sockid=internet(c_new);	//网络连接并返回服务器socket
-    setsocket_noblock(c_new);			//设置所连的两个客户端socket非阻塞
-    communication(c_new,server_sockid);	//通信
+    client_new c_new[max_client];        //定义结构体数组
+    client_new_init(c_new);              //初始化结构体数组
+    int server_sockid = internet(c_new); //网络连接并返回服务器socket
+    setsocket_noblock(c_new);            //设置所连的两个客户端socket非阻塞
+    communication(c_new);                //通信
     return 0;
 }
