@@ -50,7 +50,7 @@ void do_read(int sockid, int *flag)
             char filecontent[SIZE_FILECONTENT] = {0};
             strncpy(filename, receive + SIZE_MODE, SIZE_FILENAME);
             strncpy(filecontent, receive + SIZE_MODE + SIZE_FILENAME, SIZE_FILECONTENT);
-            FILE *fp = fopen(filename, "w");
+            FILE *fp = fopen(filename, "wb");
             fwrite(filecontent, sizeof(char), SIZE_FILECONTENT, fp);
             fclose(fp);
             printf("%s Recieve succeed!\n", filename);
@@ -86,10 +86,10 @@ void do_write(int sockid, int *flag)
         if (send[0] == 'F')
         {
             char filename[SIZE_FILENAME] = {0};
-            strncpy(filename, send + SIZE_MODE, SIZE_FILENAME - 1);
+            strncpy(filename, send + SIZE_MODE+1, SIZE_FILENAME - 1);
             filename[SIZE_FILENAME - 1] = '\0';
             strtrim(filename);
-            FILE *fp = fopen(filename, "r");
+            FILE *fp = fopen(filename, "rb");
             if (fp == NULL)
             {
                 printf("%s File doesn't exist！\n", filename);
